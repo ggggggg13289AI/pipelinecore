@@ -21,7 +21,13 @@
       "Bash(gh release create:*)",
       "SlashCommand(/sc:git:*)",
       "Bash(gh pr create:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(mv:*)",
+      "Bash(unzip:*)",
+      "Bash(python test_resource.py:*)",
+      "Bash(python:*)",
+      "SlashCommand(/sc:test:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
