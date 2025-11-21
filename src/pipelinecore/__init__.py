@@ -12,14 +12,13 @@ from pipelinecore.core import (
     GpuResourceManager,
     LogManager,
     PipelineContext,
-    PipelinePaths,
     PipelineError,
+    PipelinePaths,
     TensorflowPipelineMixin,
     __version__,
 )
 
 __all__ = [
-    "__version__",
     "BasePipeline",
     "FileStager",
     "GPUMemoryError",
@@ -29,4 +28,5 @@ __all__ = [
     "PipelinePaths",
     "PipelineError",
     "TensorflowPipelineMixin",
+    "__version__",
 ]
