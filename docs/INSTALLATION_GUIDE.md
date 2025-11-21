@@ -86,10 +86,10 @@ uv pip install git+https://github.com/ggggggg13289AI/pipelinecore.git@v0.1.0
 cd /path/to/pipelinecore
 
 # 安裝建置工具
-uv pip install build
+uv pip install builder
 
 # 建置 wheel 和 source distribution
-python -m build
+python -m builder
 
 # 這會在 dist/ 目錄中產生：
 # - pipelinecore-0.1.0-py3-none-any.whl
@@ -299,11 +299,11 @@ Suitable for distribution to multiple users or deployment to multiple environmen
 # 1. Build package in pipelinecore directory
 cd /path/to/pipelinecore
 
-# Install build tools
-uv pip install build
+# Install builder tools
+uv pip install builder
 
 # Build wheel and source distribution
-python -m build
+python -m builder
 
 # This generates in dist/ directory:
 # - pipelinecore-0.1.0-py3-none-any.whl
