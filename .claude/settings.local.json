@@ -20,7 +20,9 @@
       "Bash(git tag:*)",
       "Bash(gh release create:*)",
       "SlashCommand(/sc:git:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr:*)"
     ],
     "deny": [],
     "ask": []
