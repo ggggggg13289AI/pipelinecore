@@ -1,0 +1,110 @@
+# 輸出文件模板格式
+output_formats:
+  Aneurysm:
+    - template: "Pred_Aneurysm.nii.gz"
+      apply_to: "once"
+    - template: "Prob_Aneurysm.nii.gz"
+      apply_to: "once"
+    - template: "Pred_Aneurysm_Vessel.nii.gz"
+      apply_to: "once"
+    - template: "Pred_Aneurysm.json"
+      apply_to: "once"
+    - template: "Pred_Aneurysm_Vessel16.nii.gz"
+      apply_to: "once"
+    - template: "synthseg_{base_name}_original_synthseg33.nii.gz"
+      apply_to: "each_input"
+
+  WMH_PVS:
+    - template: "synthseg_{base_name}_original_{task_name}.nii.gz"
+      apply_to: "each_input"
+
+  DWI:
+    - template: "synthseg_DWI0_original_{task_name}.nii.gz"
+      apply_to: "once"
+
+  CMB:
+    - template: "synthseg_{swan_base_name}_original_{task_name}_from_synthseg_{other_base_name}_original_{task_name}.nii.gz"
+      apply_to: "once"
+      special: "swan_detection"
+    - template: "Pred_CMB.nii.gz"
+      apply_to: "once"
+    - template: "Pred_CMB.json"
+      apply_to: "once"
+
+  Area:
+    - template: "synthseg_{base_name}_original_synthseg33.nii.gz"
+      apply_to: "each_input"
+    - template: "synthseg_{base_name}_original_synthseg.nii.gz"
+      apply_to: "each_input"
+
+  Infarct:
+    - template: "Pred_Infarct.nii.gz"
+      apply_to: "once"
+    - template: "Pred_Infarct_ADCth.nii.gz"
+      apply_to: "once"
+    - template: "Pred_Infarct_synthseg.nii.gz"
+      apply_to: "once"
+    - template: "Pred_Infarct.json"
+      apply_to: "once"
+
+  WMH:
+    - template: "Pred_WMH.nii.gz"
+      apply_to: "once"
+    - template: "Pred_WMH_synthseg.nii.gz"
+      apply_to: "once"
+    - template: "Pred_WMH.json"
+      apply_to: "once"
+
+
+
+# 模型映射系列字典
+model_mapping_series:
+  Aneurysm:
+    - ["MRSeriesRenameEnum.MRA_BRAIN"]
+
+  Area:
+    - ["T1SeriesRenameEnum.T1BRAVO_AXI"]
+    - ["T1SeriesRenameEnum.T1BRAVO_SAG"]
+    - ["T1SeriesRenameEnum.T1BRAVO_COR"]
+    - ["T1SeriesRenameEnum.T1FLAIR_AXI"]
+    - ["T1SeriesRenameEnum.T1FLAIR_SAG"]
+    - ["T1SeriesRenameEnum.T1FLAIR_COR"]
+
+  CMB:
+    - ["MRSeriesRenameEnum.SWAN", "T1SeriesRenameEnum.T1BRAVO_AXI"]
+    - ["MRSeriesRenameEnum.SWAN", "T1SeriesRenameEnum.T1FLAIR_AXI"]
+
+  DWI:
+    - ["MRSeriesRenameEnum.DWI0"]
+
+  WMH_PVS:
+    - ["T2SeriesRenameEnum.T2FLAIR_AXI"]
+
+
+  Infarct:
+    - ["MRSeriesRenameEnum.DWI0", "MRSeriesRenameEnum.DWI1000", "MRSeriesRenameEnum.ADC"]
+
+  WMH:
+    - ["T2SeriesRenameEnum.T2FLAIR_AXI"]
+
+
+# 輸入後處理配置
+input_post_process:
+  Infarct:
+    condition:
+      input_match: ["MRSeriesRenameEnum.ADC", "MRSeriesRenameEnum.DWI0", "MRSeriesRenameEnum.DWI1000"]
+    add_files:
+      - replace:
+          from: "ADC.nii.gz"
+          to: "synthseg_DWI0_original_DWI.nii.gz"
+
+  WMH:
+    condition:
+      input_match: ["T2SeriesRenameEnum.T2FLAIR_AXI"]
+    add_files:
+      - replace:
+          from: "T2FLAIR_AXI.nii.gz"
+          to: "synthseg_T2FLAIR_AXI_original_synthseg5.nii.gz"
+      - replace:
+          from: "T2FLAIR_AXI.nii.gz"
+          to: "synthseg_T2FLAIR_AXI_original_WMH_PVS.nii.gz"
