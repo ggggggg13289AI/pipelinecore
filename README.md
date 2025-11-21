@@ -21,12 +21,34 @@ A Python framework for building machine learning and inference pipelines with GP
 
 ## Installation
 
+### For Users (Installing as a Package)
+
 ```bash
-# Using uv (recommended)
+# Method 1: Install from Git repository
+uv pip install git+https://github.com/ggggggg13289AI/pipelinecore.git
+
+# Method 2: Install from local directory
+uv pip install /path/to/pipelinecore
+
+# Method 3: Install in editable mode (for development)
+uv pip install -e /path/to/pipelinecore
+```
+
+📖 **[Complete Installation Guide](./docs/INSTALLATION_GUIDE.md)** - Detailed instructions for all installation methods
+
+### For Developers (Setting up the Project)
+
+```bash
+# Clone the repository
+git clone https://github.com/ggggggg13289AI/pipelinecore.git
+cd pipelinecore
+
+# Install dependencies with uv
 uv sync
 
-# Using pip
-pip install pipelinecore
+# Activate virtual environment
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
 ```
 
 ## Quick Start
