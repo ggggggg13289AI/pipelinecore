@@ -18,7 +18,7 @@
 
 ```bash
 # 複製儲存庫
-git clone https://github.com/user/pipelinecore.git
+git clone https://github.com/ggggggg13289AI/pipelinecore
 cd pipelinecore
 
 # 使用 uv 安裝

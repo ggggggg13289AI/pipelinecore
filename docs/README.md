@@ -18,7 +18,7 @@ A Python framework for building machine learning and inference pipelines with GP
 
 ```bash
 # Clone the repository
-git clone https://github.com/user/pipelinecore.git
+git clone https://github.com/ggggggg13289AI/pipelinecore
 cd pipelinecore
 
 # Install with uv
