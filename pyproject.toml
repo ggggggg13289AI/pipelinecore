@@ -1,6 +1,6 @@
 [project]
 name = "pipelinecore"
-version = "0.1.1"
+version = "0.1.8"
 description = "A Python framework for building ML/inference pipelines with GPU resource management and TensorFlow integration"
 readme = "docs/README.md"
 authors = [
@@ -29,13 +29,16 @@ classifiers = [
 ]
 
 dependencies = [
-    "tensorflow>=2.10.0",
+    "tensorflow<=2.15.0",
     "pynvml>=11.0.0",
     "orjson>=3.11.4",
     "pydicom-seg>=0.4.1",
     "pydicom==2.4.3",
     "pyorthanc>=1.22.1",
     "pydantic<2.11",
+    "nibabel>=5.3.2",
+    "matplotlib>=3.10.7",
+    "typing-extensions>=4.15.0",
 ]
 
 [project.optional-dependencies]
