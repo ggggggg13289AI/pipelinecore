@@ -209,3 +209,9 @@ __marimo__/
 
 # Serena MCP
 .serena/
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/pipelinecore.iml
+/.idea/vcs.xml
