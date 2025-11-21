@@ -1,7 +1,7 @@
 import enum
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from code_ai.dicom2nii.convert.config import T1SeriesRenameEnum, MRSeriesRenameEnum, T2SeriesRenameEnum
+from ..core.config import T1SeriesRenameEnum, MRSeriesRenameEnum, T2SeriesRenameEnum
 
 
 class InferenceCmdItem(BaseModel):

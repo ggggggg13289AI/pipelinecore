@@ -5,11 +5,27 @@ import yaml
 from typing import List, Dict, Optional, Tuple, Union, Any
 import numpy as np
 import pandas as pd
-
-from code_ai.utils import replace_suffix, study_id_pattern
+import re
 # 假設這些是原有的枚舉類型
 from .schema import InferenceCmd, InferenceCmdItem, InferenceEnum
 from .schema import Analysis, Task, T1SeriesRenameEnum, T2SeriesRenameEnum, MRSeriesRenameEnum
+
+
+# study_id_pattern = re.compile('^[0-9]{8}_[0-9]{8}_(MR|CT|CR|PR).*$', re.IGNORECASE)
+study_id_pattern = re.compile('.*([0-9]{8,11}_[0-9]{8}_(MR|CT|PR|CR)_E?[0-9]{8,14})+.*', re.IGNORECASE)
+
+
+def check_study_id(intput_path: pathlib.Path) -> bool:
+    global study_id_pattern
+    if intput_path.is_dir():
+        result = study_id_pattern.match(intput_path.name)
+        if result is not None:
+            return True
+    return False
+
+
+def replace_suffix(filename: str, new_suffix: str, pattern=r'\.nii\.gz$|\.nii$'):
+    return re.sub(pattern, new_suffix, filename)
 
 
 def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
