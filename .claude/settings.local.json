@@ -27,7 +27,8 @@
       "Bash(python test_resource.py:*)",
       "Bash(python:*)",
       "SlashCommand(/sc:test:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(pytest:*)"
     ],
     "deny": [],
     "ask": []

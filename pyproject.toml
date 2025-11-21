@@ -1,6 +1,6 @@
 [project]
 name = "pipelinecore"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python framework for building ML/inference pipelines with GPU resource management and TensorFlow integration"
 readme = "docs/README.md"
 authors = [
@@ -75,6 +75,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.12.0",
     "mypy>=1.8.0",
     "ruff>=0.11.5",
     "pre-commit>=3.5.0",
