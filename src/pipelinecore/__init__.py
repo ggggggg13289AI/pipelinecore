@@ -1,8 +1,11 @@
-"""PipelineCore - ML/Inference Pipeline Framework with GPU Management."""
+"""
+PipelineCore - A Python framework for building ML/inference pipelines.
 
-__version__ = "0.1.0"
+This package provides a template method pattern-based pipeline framework
+with GPU resource management and TensorFlow integration.
+"""
 
-from .base import (
+from pipelinecore.core import (
     BasePipeline,
     FileStager,
     GPUMemoryError,
@@ -12,6 +15,7 @@ from .base import (
     PipelinePaths,
     PipelineError,
     TensorflowPipelineMixin,
+    __version__,
 )
 
 __all__ = [
@@ -26,4 +30,3 @@ __all__ = [
     "PipelineError",
     "TensorflowPipelineMixin",
 ]
-
