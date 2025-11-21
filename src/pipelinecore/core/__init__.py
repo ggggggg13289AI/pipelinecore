@@ -9,8 +9,8 @@ from .base import (
     GpuResourceManager,
     LogManager,
     PipelineContext,
-    PipelinePaths,
     PipelineError,
+    PipelinePaths,
     TensorflowPipelineMixin,
 )
 

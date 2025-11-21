@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 import shutil
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Generic, Iterable, Optional, TypeVar
+from typing import Generic, TypeVar
 
 import pynvml
 import tensorflow as tf
@@ -52,7 +53,7 @@ class PipelineContext:
 class LogManager:
     """Factory that produces structured loggers for pipeline runs."""
 
-    def __init__(self, log_dir: Path, logger_name: Optional[str] = None) -> None:
+    def __init__(self, log_dir: Path, logger_name: str | None = None) -> None:
         self._log_dir = log_dir
         self._name = logger_name or f"pipeline.{log_dir.name}"
         self._log_dir.mkdir(parents=True, exist_ok=True)
