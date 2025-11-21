@@ -1,15 +1,14 @@
-import argparse
 import json
 import os
 import pathlib
 import subprocess
-from typing import Optional
+from typing import Tuple
 
-from code_ai import PYTHON3
-from code_ai.utils.inference import InferenceEnum, Task
+from ..inference import InferenceEnum
 
+PYTHON3 = os.getenv('PYTHON3')
 
-def upload_dicom_seg(input_dicom_seg_folder: str, input_nifti: str):
+def upload_dicom_seg(input_dicom_seg_folder: str, input_nifti: str) -> Tuple[str, str]:
     input_dicom_seg_folder_path = pathlib.Path(input_dicom_seg_folder)
     input_nifti_path = pathlib.Path(input_nifti)
     dicom_seg_base_name = input_nifti_path.name.split('.')[0]
@@ -33,9 +32,9 @@ def upload_dicom_seg(input_dicom_seg_folder: str, input_nifti: str):
 
 def upload_json(ID: str, mode: InferenceEnum) -> object:
     path_process = os.getenv("PATH_PROCESS")
-    cmd_json_path_path = os.path.join(path_process, 'Deep_cmd_tools', '{}_cmd.json'.format(ID))
+    cmd_json_path_path = os.path.join(path_process, 'Deep_cmd_tools', f'{ID}_cmd.json')
     if os.path.exists(cmd_json_path_path):
-        with open(cmd_json_path_path, 'r') as f:
+        with open(cmd_json_path_path) as f:
             data_json = json.load(f)
         cmd_data = next(filter(lambda x: x['study_id'] == ID and x['name'] == mode, data_json))
         if cmd_data is not None:
@@ -45,12 +44,9 @@ def upload_json(ID: str, mode: InferenceEnum) -> object:
 
             platform_json_list = list(filter(lambda x: os.path.exists(x), platform_json_list))
             for platform_json in platform_json_list:
-                cmd_str = ('export PYTHONPATH={} && '
-                           '{} code_ai/pipeline/upload/platform_json.py '
-                           '--Input {} '.format(pathlib.Path(__file__).parent.parent.parent.parent.absolute(),
-                                                PYTHON3,
-                                                platform_json
-                                                )
+                cmd_str = (f'export PYTHONPATH={pathlib.Path(__file__).parent.parent.parent.parent.absolute()} && '
+                           f'{PYTHON3} code_ai/pipeline/upload/platform_json.py '
+                           f'--Input {platform_json} '
                            )
                 print('upload_json', cmd_str)
 
@@ -60,6 +56,6 @@ def upload_json(ID: str, mode: InferenceEnum) -> object:
                 stdout, stderr = process.communicate()
                 print(stdout, stderr)
         else:
-            raise ValueError('No found {} for {}'.format(mode, ID))
+            raise ValueError(f'No found {mode} for {ID}')
     else:
         raise FileNotFoundError(cmd_json_path_path)

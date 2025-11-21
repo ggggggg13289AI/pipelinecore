@@ -4,14 +4,15 @@
 """
 @author: sean Ho
 """
+import argparse
+import os
 import warnings
+
 import httpx
 import orjson
+from code_ai import load_dotenv
 
 warnings.filterwarnings("ignore")  # 忽略警告输出
-import os
-import argparse
-from code_ai import load_dotenv
 load_dotenv()
 
 

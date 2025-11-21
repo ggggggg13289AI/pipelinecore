@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 @author: sean Ho
 """
@@ -10,18 +9,19 @@ import traceback
 """
 @author: sean Ho
 """
+import argparse
 import asyncio
 import glob
+import os
+import warnings
 
 import aiofiles
-import warnings
 import pyorthanc
+from dotenv import load_dotenv
+from pyorthanc import AsyncOrthanc, Orthanc
 
 warnings.filterwarnings("ignore")  # 忽略警告输出
-import os
-import argparse
-from pyorthanc import Orthanc,AsyncOrthanc
-from dotenv import load_dotenv
+
 load_dotenv()
 
 sem_limit = 128
@@ -69,7 +69,7 @@ async def main():
             print('result', result)
         if os.path.isdir(input_path):
             client = AsyncOrthanc(UPLOAD_DATA_DICOM_SEG_URL,timeout=300)
-            dcm_list = glob.glob('{}/**/*.dcm'.format(input_path),recursive=True)
+            dcm_list = glob.glob(f'{input_path}/**/*.dcm',recursive=True)
             print('dcm_list',len(dcm_list))
             total_files = len(dcm_list)
             successful_uploads = 0
