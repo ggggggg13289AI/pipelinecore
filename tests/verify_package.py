@@ -27,7 +27,7 @@ def verify_package_structure():
     wheel_files = list(dist_dir.glob("*.whl")) if dist_dir.exists() else []
 
     if not wheel_files:
-        print("   ⚠️  没有找到 wheel 包，请先运行: uv build")
+        print("   ⚠️  没有找到 wheel 包，请先运行: uv builder")
         return False
 
     wheel_path = wheel_files[0]
