@@ -8,7 +8,18 @@
       "mcp__serena__get_symbols_overview",
       "mcp__serena__find_symbol",
       "Bash(uv:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: enhance project configuration and add i18n documentation\n\n- Update pyproject.toml with comprehensive configuration\n  - Add project metadata (classifiers, keywords, URLs)\n  - Add dependencies (tensorflow, pynvml)\n  - Add dependency groups (dev, test, linting, docs)\n  - Configure development tools (ruff, mypy, pytest, coverage)\n  - Change build backend to hatchling for better compatibility\n\n- Add internationalized documentation\n  - Create docs/README.md (English version)\n  - Create docs/README.zh-TW.md (Traditional Chinese version)\n  - Include installation, quick start, architecture, and development guides\n\n- Add CLAUDE.md for Claude Code integration\n  - Document development commands\n  - Explain core pipeline architecture\n  - Describe implementation patterns\n\n- Update .gitignore to exclude .serena/ directory\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(chmod:*)",
+      "Bash(git pull:*)",
+      "Bash(git tag:*)",
+      "Bash(gh release create:*)",
+      "SlashCommand(/sc:git:*)"
     ],
     "deny": [],
     "ask": []
