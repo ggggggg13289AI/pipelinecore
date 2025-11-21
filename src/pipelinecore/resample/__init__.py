@@ -1,9 +1,10 @@
 import os
+import pathlib
+
 import nibabel as nib
 import nibabel.processing
-import SimpleITK as sitk
-import pathlib
 import numpy as np
+import SimpleITK as sitk
 
 
 def resample_one(input_file_path, output_file_path):
