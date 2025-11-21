@@ -1,7 +1,4 @@
 import enum
-from typing import List,  Union,  Optional
-from code_ai import load_dotenv
-load_dotenv()
 
 
 class SeriesTypeEnum(enum.Enum):
@@ -18,7 +15,7 @@ class SeriesTypeEnum(enum.Enum):
     ADC         = '10'
 
     @classmethod
-    def to_list(cls) -> List[Union[enum.Enum]]:
+    def to_list(cls) -> list[enum.Enum]:
         return list(map(lambda c: c, cls))
 
 
@@ -30,5 +27,5 @@ class ModelTypeEnum(enum.Enum):
     Lacune   = '5'
 
     @classmethod
-    def to_list(cls) -> List[Union[enum.Enum]]:
+    def to_list(cls) -> list[enum.Enum]:
         return list(map(lambda c: c, cls))

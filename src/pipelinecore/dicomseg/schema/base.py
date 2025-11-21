@@ -1,12 +1,10 @@
 import datetime
-import enum
 import os
-from typing import List,  Union,  Optional
+
 import numpy as np
-from pydantic import BaseModel, PositiveInt, field_validator, field_serializer, ConfigDict
+from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 
-from .schema.enum import SeriesTypeEnum, ModelTypeEnum
-
+from .schema.enum import ModelTypeEnum, SeriesTypeEnum
 
 # // 目前 Orthanc 自動同步機制的 group 應為 44
 GROUP_ID = os.getenv("GROUP_ID",44)
@@ -24,9 +22,9 @@ class InstanceRequest(BaseModel):
     def extract_projectionr(cls, value):
         if value is None:
             return '0.0'
-        elif isinstance(value, (float,int)):
+        if isinstance(value, (float,int)):
             return str(round(value,6))
-        elif isinstance(value,str):
+        if isinstance(value,str):
             return str(round(float(value),6))
         return '0.0'
 
@@ -35,13 +33,13 @@ class SortedSeriesRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     # dicom
     series_instance_uid :str
-    instance            : List[InstanceRequest]
+    instance            : list[InstanceRequest]
 
 
 class SortedRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     study_instance_uid: str
-    series            : List[SortedSeriesRequest]
+    series            : list[SortedSeriesRequest]
 
 
 class MaskInstanceRequest(BaseModel):
@@ -96,7 +94,7 @@ class MaskSeriesRequest(BaseModel):
     series_instance_uid : str
     # 目前僅 Aneu 的 TOF_MRA:1 , Pitch: 2 , Yaw: 3 , 未來有其他 Series 再加
     series_type         : str
-    instances           : List[MaskInstanceRequest]
+    instances           : list[MaskInstanceRequest]
     model_type          : str
 
 
@@ -106,7 +104,7 @@ class MaskSeriesRequest(BaseModel):
         if value is None:
             return '1'
         if isinstance(value, str):
-            series_type_enum_list: List[SeriesTypeEnum] = SeriesTypeEnum.to_list()
+            series_type_enum_list: list[SeriesTypeEnum] = SeriesTypeEnum.to_list()
             for series_type_enum in series_type_enum_list:
                 if value == series_type_enum.name:
                     return series_type_enum.value
@@ -117,7 +115,7 @@ class MaskRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     study_instance_uid : str
     group_id           : PositiveInt = 44
-    series             : List[MaskSeriesRequest]
+    series             : list[MaskSeriesRequest]
 
 
 class StudySeriesRequest(BaseModel):
@@ -135,7 +133,7 @@ class StudySeriesRequest(BaseModel):
         if value is None:
             return '1'
         if isinstance(value, str):
-            series_type_enum_list: List[SeriesTypeEnum] = SeriesTypeEnum.to_list()
+            series_type_enum_list: list[SeriesTypeEnum] = SeriesTypeEnum.to_list()
             for series_type_enum in series_type_enum_list:
                 if value == series_type_enum.name:
                     return series_type_enum.value
@@ -144,7 +142,7 @@ class StudySeriesRequest(BaseModel):
 
 class StudyModelRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    series_type : List[str]
+    series_type : list[str]
     model_type  : str
     lession     : str = "0"
     status      : str = "1"
@@ -164,7 +162,7 @@ class StudyModelRequest(BaseModel):
         if value is None:
             return '1'
         if isinstance(value, str):
-            model_type_enum_list: List[ModelTypeEnum] = ModelTypeEnum.to_list()
+            model_type_enum_list: list[ModelTypeEnum] = ModelTypeEnum.to_list()
             for model_type_enum in model_type_enum_list:
                 if value == model_type_enum.name:
                     return model_type_enum.value
@@ -177,7 +175,7 @@ class StudyModelRequest(BaseModel):
         if value is None:
             return ['1']
         if isinstance(value, str):
-            series_type_enum_list: List[SeriesTypeEnum] = SeriesTypeEnum.to_list()
+            series_type_enum_list: list[SeriesTypeEnum] = SeriesTypeEnum.to_list()
             for series_type_enum in series_type_enum_list:
                 if value == series_type_enum.name:
                     return [series_type_enum.value]
@@ -200,8 +198,8 @@ class StudyRequest(BaseModel):
     patient_name       :str
     study_instance_uid :str
     patient_id         :str
-    series             :List[StudySeriesRequest]
-    model              :List[StudyModelRequest]
+    series             :list[StudySeriesRequest]
+    model              :list[StudyModelRequest]
 
     @field_validator('patient_name', mode='before')
     @classmethod
@@ -212,8 +210,7 @@ class StudyRequest(BaseModel):
         if isinstance(value, str):
 
             return value
-        else:
-            return str(value)
+        return str(value)
 
     @field_validator('study_date', mode='before')
     @classmethod
@@ -221,8 +218,7 @@ class StudyRequest(BaseModel):
         try:
             if isinstance(value, str) and len(value) == 8:
                 return datetime.date(int(value[:4]), int(value[4:6]), int(value[6:8]))
-            else:
-                return datetime.datetime.strptime(value,'%Y-%m-%d').date()
+            return datetime.datetime.strptime(value,'%Y-%m-%d').date()
         except:
             return datetime.datetime.now().date()
 
@@ -244,6 +240,6 @@ class StudyRequest(BaseModel):
 
 class AITeamRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    study   : Optional[StudyRequest]  = None
-    sorted  : Optional[SortedRequest] = None
-    mask    : Optional[MaskRequest]   = None
+    study   : StudyRequest | None  = None
+    sorted  : SortedRequest | None = None
+    mask    : MaskRequest | None   = None

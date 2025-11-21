@@ -1,8 +1,17 @@
 
 from typing import TypeVar
-from code_ai.pipeline.dicomseg.schema.base import SortedRequest,SortedSeriesRequest
-from code_ai.pipeline.dicomseg.schema.base import StudyRequest,StudySeriesRequest,StudyModelRequest
-from code_ai.pipeline.dicomseg.schema.base import MaskRequest,MaskSeriesRequest,MaskInstanceRequest, AITeamRequest
+
+from .base import (
+    AITeamRequest,
+    MaskInstanceRequest,
+    MaskRequest,
+    MaskSeriesRequest,
+    SortedRequest,
+    SortedSeriesRequest,
+    StudyModelRequest,
+    StudyRequest,
+    StudySeriesRequest,
+)
 
 AITeamT      = TypeVar('AITeamT', bound=AITeamRequest)
 StudyT       = TypeVar('StudyT', bound=StudyRequest)

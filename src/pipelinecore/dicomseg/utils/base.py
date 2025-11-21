@@ -1,20 +1,22 @@
-# -*- coding: utf-8 -*-
 """
 @author: sean
 """
+import os
 import pathlib
-from typing import Dict, List, Any, Union
+from typing import Any
+
+import matplotlib.colors as mcolors
+import nibabel as nib
 import numpy as np
 import pydicom
-import nibabel as nib
-import SimpleITK as sitk
-import matplotlib.colors as mcolors
 import pydicom_seg
+import SimpleITK as sitk
 from pydicom import FileDataset
 from pydicom.dicomdir import DicomDir
 
-from code_ai.pipeline.dicomseg import DCM_EXAMPLE
-
+EXAMPLE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                            'SEG_20230210_160056_635_S3.dcm')
+DCM_EXAMPLE = pydicom.dcmread(EXAMPLE_FILE)
 
 def compute_orientation(init_axcodes, final_axcodes):
     """
@@ -58,20 +60,19 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     return nib.orientations.apply_orientation(data_array, ornt_transf)
 
 
-def get_array_to_dcm_axcodes(path_nii :Union[pathlib.Path,str]) -> np.ndarray:
+def get_array_to_dcm_axcodes(path_nii :pathlib.Path | str) -> np.ndarray:
     pred_nii = nib.load(path_nii)
     pred_data = np.array(pred_nii.dataobj)
     # Reorient prediction data to standard orientation
     pred_nii_obj_axcodes = tuple(nib.aff2axcodes(pred_nii.affine))
-    new_nifti_array = do_reorientation(pred_data, pred_nii_obj_axcodes,
+    return do_reorientation(pred_data, pred_nii_obj_axcodes,
                                        # ('I', 'P', 'L')
                                        ('S', 'P', 'L')
                                        )
-    return new_nifti_array
 
 
 
-def get_dicom_seg_template(model: str, label_dict: Dict) -> Dict:
+def get_dicom_seg_template(model: str, label_dict: dict) -> dict:
     """
     Create a DICOM-SEG template with segment attributes.
 
@@ -133,8 +134,8 @@ def get_dicom_seg_template(model: str, label_dict: Dict) -> Dict:
 def make_dicomseg_file(mask: np.ndarray,
                        image: sitk.Image,
                        first_dcm: pydicom.FileDataset,
-                       source_images: List[pydicom.FileDataset],
-                       template_json: Dict) -> pydicom.FileDataset:
+                       source_images: list[pydicom.FileDataset],
+                       template_json: dict) -> pydicom.FileDataset:
     """
     Create a DICOM-SEG file from a mask array.
 
@@ -189,8 +190,8 @@ def create_dicom_seg_file(pred_data_unique: np.ndarray,
                           output_folder: pathlib.Path,
                           image: Any,
                           first_dcm: FileDataset | DicomDir,
-                          source_images: List[FileDataset | DicomDir],
-                          ) -> List[Dict[str, Any]]:
+                          source_images: list[FileDataset | DicomDir],
+                          ) -> list[dict[str, Any]]:
     """
     Create DICOM-SEG files for each unique value in the prediction data.
 
@@ -245,7 +246,7 @@ def create_dicom_seg_file(pred_data_unique: np.ndarray,
             dcm_seg.save_as(dcm_seg_path)
 
             # Clear console line and show progress
-            print(f" " * 100, end='\r')
+            print(" " * 100, end='\r')
             print(f"{index + 1}/{pred_data_unique_len} Saved: {dcm_seg_path}", end='\r')
 
             # Add result to the list if file was created successfully
@@ -259,8 +260,8 @@ def create_dicom_seg_file(pred_data_unique: np.ndarray,
     return reslut_list
 
 
-def load_and_sort_dicom_files(path_dcms: Union[pathlib.Path,str]) -> tuple[
-    List[Any], Any, FileDataset | DicomDir, list[FileDataset | DicomDir]]:
+def load_and_sort_dicom_files(path_dcms: pathlib.Path | str) -> tuple[
+    list[Any], Any, FileDataset | DicomDir, list[FileDataset | DicomDir]]:
     """
     Load and sort DICOM files from a directory.
     This function only needs to be executed once per directory.
@@ -330,7 +331,5 @@ def transform_mask_for_dicom_seg(mask: np.ndarray) -> np.ndarray:
 
     # Flip y and x axes to match DICOM coordinate system
     segmentation_data = np.flip(segmentation_data, 1)
-    segmentation_data = np.flip(segmentation_data, 2)
-
-    return segmentation_data
+    return np.flip(segmentation_data, 2)
 
