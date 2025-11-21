@@ -64,6 +64,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.sdist]
 include = ["docs/README.md", "/src"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/pipelinecore"]
+
 [tool.uv]
 default-groups = ["dev"]
 
