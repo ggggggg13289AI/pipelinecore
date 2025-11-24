@@ -1,6 +1,6 @@
 [project]
 name = "pipelinecore"
-version = "0.1.1"
+version = "0.1.9"
 description = "A Python framework for building ML/inference pipelines with GPU resource management and TensorFlow integration"
 readme = "docs/README.md"
 authors = [
