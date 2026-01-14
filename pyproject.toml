@@ -29,7 +29,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "tensorflow>=2.10.0",
     "pynvml>=11.0.0",
     "orjson>=3.11.4",
     "pydicom-seg>=0.4.1",
@@ -39,6 +38,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+tensorflow = [
+    "tensorflow>=2.10.0",
+]
+pytorch = [
+    "torch>=2.2.0",
+]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
