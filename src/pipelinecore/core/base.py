@@ -9,10 +9,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Generic, TypeVar
 
-import pynvml
-import tensorflow as tf
-
 logger = logging.getLogger(__name__)
+
+# Lazy imports for GPU dependencies
+# tensorflow and pynvml are imported inside classes that need them
 
 InputT = TypeVar("InputT")
 PreparedT = TypeVar("PreparedT")
@@ -89,6 +89,8 @@ class GpuResourceManager:
         self._usage_check_enabled = usage_check_enabled
 
     def ensure_available(self) -> None:
+        import tensorflow as tf  # Lazy import
+
         gpus = tf.config.experimental.list_physical_devices("GPU")
         if not gpus:
             raise GPUMemoryError("No GPU devices detected by TensorFlow.")
@@ -105,6 +107,8 @@ class GpuResourceManager:
             self._wait_for_gpu_capacity()
 
     def _wait_for_gpu_capacity(self) -> None:
+        import pynvml  # Lazy import
+
         pynvml.nvmlInit()
         handle = pynvml.nvmlDeviceGetHandleByIndex(self._gpu_index)
         for attempt in range(self._max_checks):
@@ -119,7 +123,9 @@ class GpuResourceManager:
                 )
             time.sleep(self._check_interval)
 
-    def _set_visible_device(self, device: tf.config.PhysicalDevice) -> None:
+    def _set_visible_device(self, device: "tf.config.PhysicalDevice") -> None:
+        import tensorflow as tf  # Lazy import
+
         visible_devices = tf.config.experimental.get_visible_devices("GPU")
         if any(dev.name == device.name for dev in visible_devices):
             return
@@ -128,7 +134,9 @@ class GpuResourceManager:
         except RuntimeError as exc:  # pragma: no cover - TF internal state
             logger.warning("Unable to set visible GPU devices: %s", exc)
 
-    def _enable_memory_growth(self, device: tf.config.PhysicalDevice) -> None:
+    def _enable_memory_growth(self, device: "tf.config.PhysicalDevice") -> None:
+        import tensorflow as tf  # Lazy import
+
         try:
             if not tf.config.experimental.get_memory_growth(device):
                 tf.config.experimental.set_memory_growth(device, True)
