@@ -1,4 +1,3 @@
-
 from typing import TypeVar
 
 from .base import (
@@ -13,14 +12,14 @@ from .base import (
     StudySeriesRequest,
 )
 
-AITeamT      = TypeVar('AITeamT', bound=AITeamRequest)
-StudyT       = TypeVar('StudyT', bound=StudyRequest)
-StudySeriesT = TypeVar('StudySeriesT', bound=StudySeriesRequest)
-StudyModelT  = TypeVar('StudyModelT', bound=StudyModelRequest)
+AITeamT = TypeVar("AITeamT", bound=AITeamRequest)
+StudyT = TypeVar("StudyT", bound=StudyRequest)
+StudySeriesT = TypeVar("StudySeriesT", bound=StudySeriesRequest)
+StudyModelT = TypeVar("StudyModelT", bound=StudyModelRequest)
 
-SortedT       = TypeVar('SortedT', bound=SortedRequest)
-SortedSeriesT = TypeVar('SortedSeriesT', bound=SortedSeriesRequest)
+SortedT = TypeVar("SortedT", bound=SortedRequest)
+SortedSeriesT = TypeVar("SortedSeriesT", bound=SortedSeriesRequest)
 
-MaskT         = TypeVar('MaskT', bound=MaskRequest)
-MaskSeriesT   = TypeVar('MaskSeriesT', bound=MaskSeriesRequest)
-MaskInstanceT = TypeVar('MaskInstanceT', bound=MaskInstanceRequest)
+MaskT = TypeVar("MaskT", bound=MaskRequest)
+MaskSeriesT = TypeVar("MaskSeriesT", bound=MaskSeriesRequest)
+MaskInstanceT = TypeVar("MaskInstanceT", bound=MaskInstanceRequest)

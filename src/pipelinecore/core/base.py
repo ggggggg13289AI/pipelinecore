@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import time
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
+
+from .protocol import LoggerLike
+from .timing import TimingCollector, timed_execution
+
+if TYPE_CHECKING:
+    import tensorflow as tf
+
+    from .timing import TimingResult
 
 logger = logging.getLogger(__name__)
 
@@ -41,33 +50,77 @@ class PipelinePaths:
             path.mkdir(parents=True, exist_ok=True)
 
 
-@dataclass(frozen=True)
+@dataclass
 class PipelineContext:
-    """Shared runtime context for every pipeline execution."""
+    """Shared runtime context for every pipeline execution.
+
+    Attributes:
+        pipeline_id: Unique identifier for this pipeline run
+        paths: Directory paths for process, output, and logs
+        logger: Logger instance (LoggerLike or logging.Logger)
+        timing_collector: Optional collector for timing results (default: None)
+    """
 
     pipeline_id: str
     paths: PipelinePaths
-    logger: logging.Logger
+    logger: LoggerLike | logging.Logger
+    timing_collector: TimingCollector | None = field(default=None)
+
+    def record_timing(self, timing: TimingResult) -> None:
+        """Record timing result if collector is available."""
+        if self.timing_collector is not None:
+            self.timing_collector.add(timing)
 
 
 class LogManager:
-    """Factory that produces structured loggers for pipeline runs."""
+    """Factory that produces structured loggers for pipeline runs.
+
+    Supports PATH_LOG environment variable for centralized log directory.
+    If PATH_LOG is set, logs are written to PATH_LOG/<logger_name>/YYYYMMDD.log
+    Otherwise, falls back to the provided log_dir.
+    """
+
+    ENV_PATH_LOG = "PATH_LOG"
 
     def __init__(self, log_dir: Path, logger_name: str | None = None) -> None:
-        self._log_dir = log_dir
         self._name = logger_name or f"pipeline.{log_dir.name}"
+
+        # Check PATH_LOG environment variable
+        env_log_path = os.environ.get(self.ENV_PATH_LOG)
+        if env_log_path:
+            self._log_dir = Path(env_log_path) / self._name
+        else:
+            self._log_dir = log_dir
+
         self._log_dir.mkdir(parents=True, exist_ok=True)
 
     def create_logger(self) -> logging.Logger:
         log_file = self._log_dir / f"{datetime.now():%Y%m%d}.log"
         logger = logging.getLogger(self._name)
         logger.setLevel(logging.INFO)
-        if not any(isinstance(handler, logging.FileHandler) and handler.baseFilename == str(log_file)
-                   for handler in logger.handlers):
+        if not any(
+            isinstance(handler, logging.FileHandler) and handler.baseFilename == str(log_file)
+            for handler in logger.handlers
+        ):
             file_handler = logging.FileHandler(log_file, encoding="utf-8")
             formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
+        return logger
+
+    @classmethod
+    def get_console_logger(cls, name: str) -> logging.Logger:
+        """Get a console-only logger (no file output).
+
+        This is a convenience method for CLI scripts that don't need file logging.
+        """
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.INFO)
+        if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
+            console_handler = logging.StreamHandler()
+            formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+            console_handler.setFormatter(formatter)
+            logger.addHandler(console_handler)
         return logger
 
 
@@ -95,9 +148,7 @@ class GpuResourceManager:
         if not gpus:
             raise GPUMemoryError("No GPU devices detected by TensorFlow.")
         if self._gpu_index >= len(gpus):
-            raise GPUMemoryError(
-                f"GPU index {self._gpu_index} is out of range for available devices {len(gpus)}."
-            )
+            raise GPUMemoryError(f"GPU index {self._gpu_index} is out of range for available devices {len(gpus)}.")
 
         target_device = gpus[self._gpu_index]
         self._set_visible_device(target_device)
@@ -118,12 +169,11 @@ class GpuResourceManager:
                 return
             if attempt + 1 == self._max_checks:
                 raise GPUMemoryError(
-                    f"GPU {self._gpu_index} usage ratio {usage_ratio:.2f} exceeds threshold "
-                    f"{self._usage_threshold:.2f}"
+                    f"GPU {self._gpu_index} usage ratio {usage_ratio:.2f} exceeds threshold {self._usage_threshold:.2f}"
                 )
             time.sleep(self._check_interval)
 
-    def _set_visible_device(self, device: "tf.config.PhysicalDevice") -> None:
+    def _set_visible_device(self, device: tf.config.PhysicalDevice) -> None:
         import tensorflow as tf  # Lazy import
 
         visible_devices = tf.config.experimental.get_visible_devices("GPU")
@@ -134,7 +184,7 @@ class GpuResourceManager:
         except RuntimeError as exc:  # pragma: no cover - TF internal state
             logger.warning("Unable to set visible GPU devices: %s", exc)
 
-    def _enable_memory_growth(self, device: "tf.config.PhysicalDevice") -> None:
+    def _enable_memory_growth(self, device: tf.config.PhysicalDevice) -> None:
         import tensorflow as tf  # Lazy import
 
         try:
@@ -196,14 +246,44 @@ class BasePipeline(Generic[InputT, PreparedT, InferenceT, OutputT]):
         raise NotImplementedError
 
     def execute(self, payload: InputT) -> OutputT:
+        """Execute the pipeline with optional timing collection.
+
+        If context.timing_collector is set, timing results are collected
+        for prepare, run_inference, and postprocess steps.
+        """
         self.context.paths.ensure()
         self.before_run()
         self.context.logger.info("Pipeline %s started.", self.context.pipeline_id)
-        prepared = self.prepare(payload)
-        inference = self.run_inference(prepared)
-        result = self.postprocess(inference)
+
+        # Execute with timing if collector is available
+        if self.context.timing_collector is not None:
+            prepared, prep_timing = timed_execution(self.prepare, "prepare", payload, logger=self.context.logger)
+            self.context.timing_collector.add(prep_timing)
+            if not prep_timing.success:
+                raise PipelineError(f"prepare failed: {prep_timing.message}")
+
+            inference, inf_timing = timed_execution(
+                self.run_inference, "run_inference", prepared, logger=self.context.logger
+            )
+            self.context.timing_collector.add(inf_timing)
+            if not inf_timing.success:
+                raise PipelineError(f"run_inference failed: {inf_timing.message}")
+
+            result, post_timing = timed_execution(
+                self.postprocess, "postprocess", inference, logger=self.context.logger
+            )
+            self.context.timing_collector.add(post_timing)
+            if not post_timing.success:
+                raise PipelineError(f"postprocess failed: {post_timing.message}")
+
+            # Log timing summary
+            self.context.logger.info("\n%s", self.context.timing_collector.summary())
+        else:
+            # Execute without timing (backward compatible)
+            prepared = self.prepare(payload)
+            inference = self.run_inference(prepared)
+            result = self.postprocess(inference)
+
         final_result = self.after_run(result)
         self.context.logger.info("Pipeline %s finished.", self.context.pipeline_id)
         return final_result
-
-

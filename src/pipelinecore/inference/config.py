@@ -1,12 +1,13 @@
 import os
 import pathlib
-from typing import List
-from .schema import InferenceEnum
+
 from .base import load_config, resolve_enum_mapping_series
+from .schema import InferenceEnum
 
 
-def generate_output_files(input_paths: List[str], task_name: str, base_output_path: str,
-                          config_path: str = "config.yaml") -> List[str]:
+def generate_output_files(
+    input_paths: list[str], task_name: str, base_output_path: str, config_path: str = "config.yaml"
+) -> list[str]:
     """
     Generate output file names based on input paths, task names, and configuration.
 
@@ -34,11 +35,11 @@ def generate_output_files(input_paths: List[str], task_name: str, base_output_pa
 
     # Special handling for CMB task which needs to determine SWAN file
     if task_name == InferenceEnum.CMB and len(input_paths) >= 2:
-        base_name1 = os.path.basename(input_paths[0]).split('.')[0]
-        base_name2 = os.path.basename(input_paths[1]).split('.')[0]
+        base_name1 = os.path.basename(input_paths[0]).split(".")[0]
+        base_name2 = os.path.basename(input_paths[1]).split(".")[0]
 
-        swan_base_name = base_name1 if base_name1.startswith('SWAN') else base_name2
-        other_base_name = base_name2 if base_name1.startswith('SWAN') else base_name1
+        swan_base_name = base_name1 if base_name1.startswith("SWAN") else base_name2
+        other_base_name = base_name2 if base_name1.startswith("SWAN") else base_name1
 
         for format_str in task_formats:
             # Replace placeholders in format string
@@ -46,7 +47,7 @@ def generate_output_files(input_paths: List[str], task_name: str, base_output_pa
                 swan_base_name=swan_base_name,
                 other_base_name=other_base_name,
                 task_name=task_name,
-                base_name=None  # Not used in this case
+                base_name=None,  # Not used in this case
             )
             output_files.append(os.path.join(base_output_path, file_name))
 
@@ -56,11 +57,8 @@ def generate_output_files(input_paths: List[str], task_name: str, base_output_pa
             # For formats that need to be applied to each input file
             if "{base_name}" in format_str:
                 for input_path in input_paths:
-                    base_name = os.path.basename(input_path).split('.')[0]
-                    file_name = format_str.format(
-                        base_name=base_name,
-                        task_name=task_name
-                    )
+                    base_name = os.path.basename(input_path).split(".")[0]
+                    file_name = format_str.format(base_name=base_name, task_name=task_name)
                     output_files.append(os.path.join(base_output_path, file_name))
             # For formats that are applied once
             else:
@@ -70,7 +68,7 @@ def generate_output_files(input_paths: List[str], task_name: str, base_output_pa
     return output_files
 
 
-config_file = pathlib.Path(__file__).parent.joinpath('config.yaml')
-CONFIG_DICT                 = load_config(config_file)
+config_file = pathlib.Path(__file__).parent.joinpath("config.yaml")
+CONFIG_DICT = load_config(config_file)
 MODEL_MAPPING_SERIES_CONFIG = CONFIG_DICT.get("model_mapping_series", {})
-MODEL_MAPPING_SERIES_DICT   = resolve_enum_mapping_series(MODEL_MAPPING_SERIES_CONFIG)
+MODEL_MAPPING_SERIES_DICT = resolve_enum_mapping_series(MODEL_MAPPING_SERIES_CONFIG)

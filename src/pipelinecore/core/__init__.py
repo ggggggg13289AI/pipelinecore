@@ -13,9 +13,17 @@ from .base import (
     PipelinePaths,
     TensorflowPipelineMixin,
 )
+from .protocol import LoggerLike
+from .timing import (
+    TimedLogger,
+    TimingCollector,
+    TimingResult,
+    timed_execution,
+)
 
 __all__ = [
     "__version__",
+    # Base classes
     "BasePipeline",
     "FileStager",
     "GPUMemoryError",
@@ -25,5 +33,11 @@ __all__ = [
     "PipelinePaths",
     "PipelineError",
     "TensorflowPipelineMixin",
+    # Protocols
+    "LoggerLike",
+    # Timing
+    "TimedLogger",
+    "TimingCollector",
+    "TimingResult",
+    "timed_execution",
 ]
-

@@ -1,22 +1,31 @@
 import argparse
 import os
 import pathlib
-import yaml
-from typing import List, Dict, Optional, Tuple, Union, Any
+from typing import Any
+
 import numpy as np
 import pandas as pd
+import yaml
+from code_ai.utils import replace_suffix
 
-from code_ai.utils import replace_suffix, study_id_pattern
 # 假設這些是原有的枚舉類型
-from .schema import InferenceCmd, InferenceCmdItem, InferenceEnum
-from .schema import Analysis, Task, T1SeriesRenameEnum, T2SeriesRenameEnum, MRSeriesRenameEnum
+from .schema import (
+    Analysis,
+    InferenceCmd,
+    InferenceCmdItem,
+    InferenceEnum,
+    MRSeriesRenameEnum,
+    T1SeriesRenameEnum,
+    T2SeriesRenameEnum,
+    Task,
+)
 
 
-def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
+def load_config(config_path: str = "config.yaml") -> dict[str, Any]:
     """
     Load configuration from YAML file.
     """
-    with open(config_path, 'r') as file:
+    with open(config_path) as file:
         config = yaml.safe_load(file)
     return config
 
@@ -32,7 +41,7 @@ def get_enum_by_name(enum_name: str) -> Any:
         Enum instance or None if not found
     """
     # 分離類名和枚舉值
-    parts = enum_name.split('.')
+    parts = enum_name.split(".")
     if len(parts) != 2:
         return None
 
@@ -40,10 +49,10 @@ def get_enum_by_name(enum_name: str) -> Any:
 
     # 映射枚舉類名到枚舉類
     enum_classes = {
-        'T1SeriesRenameEnum': T1SeriesRenameEnum,
-        'T2SeriesRenameEnum': T2SeriesRenameEnum,
-        'MRSeriesRenameEnum': MRSeriesRenameEnum,
-        'InferenceEnum': InferenceEnum
+        "T1SeriesRenameEnum": T1SeriesRenameEnum,
+        "T2SeriesRenameEnum": T2SeriesRenameEnum,
+        "MRSeriesRenameEnum": MRSeriesRenameEnum,
+        "InferenceEnum": InferenceEnum,
     }
 
     enum_class = enum_classes.get(enum_class_name)
@@ -57,7 +66,7 @@ def get_enum_by_name(enum_name: str) -> Any:
         return None
 
 
-def resolve_enum_mapping_series(mapping_config: Dict) -> Dict:
+def resolve_enum_mapping_series(mapping_config: dict) -> dict:
     """
     Resolve enum mapping series from configuration.
 
@@ -91,8 +100,9 @@ def resolve_enum_mapping_series(mapping_config: Dict) -> Dict:
     return resolved_mapping
 
 
-def check_study_mapping_inference(study_path: pathlib.Path,
-                                  config_path: str = "config.yaml") -> Dict[ str, Dict[str, str]]:
+def check_study_mapping_inference(
+    study_path: pathlib.Path, config_path: str = "config.yaml"
+) -> dict[str, dict[str, str]]:
     """
     Check study mapping inference using configuration from YAML.
     """
@@ -104,20 +114,20 @@ def check_study_mapping_inference(study_path: pathlib.Path,
 
     file_list = sorted(study_path.iterdir())
 
-    if any(filter(lambda x: x.name.endswith('nii.gz') or x.name.endswith('nii'), file_list)):
-        df_file = pd.DataFrame(file_list, columns=['file_path'])
-        df_file['file_name'] = df_file['file_path'].map(lambda x: x.name.replace('.nii.gz', ''))
+    if any(filter(lambda x: x.name.endswith("nii.gz") or x.name.endswith("nii"), file_list)):
+        df_file = pd.DataFrame(file_list, columns=["file_path"])
+        df_file["file_name"] = df_file["file_path"].map(lambda x: x.name.replace(".nii.gz", ""))
         model_mapping_dict = {}
 
         for model_name, model_mapping_series_list in model_mapping_series_dict.items():
             for mapping_series in model_mapping_series_list:
                 # 將枚舉轉換為其值以進行比較
                 mapping_series_values = [enum.value for enum in mapping_series]
-                result = np.intersect1d(df_file['file_name'], mapping_series_values, return_indices=True)
+                result = np.intersect1d(df_file["file_name"], mapping_series_values, return_indices=True)
 
                 if result[0].shape[0] >= len(mapping_series_values):
                     df_result = df_file.iloc()[result[1]]
-                    file_path = list(map(lambda x: str(x), df_result['file_path'].to_list()))
+                    file_path = list(map(lambda x: str(x), df_result["file_path"].to_list()))
                     model_mapping_dict.update({model_name.value: file_path})
                     break
 
@@ -125,26 +135,30 @@ def check_study_mapping_inference(study_path: pathlib.Path,
     return None
 
 
-def get_file_list(input_path: pathlib.Path, suffixes: str, filter_name=None) -> List[pathlib.Path]:
+def get_file_list(input_path: pathlib.Path, suffixes: str, filter_name=None) -> list[pathlib.Path]:
     if any(suffix in input_path.suffixes for suffix in suffixes):
         file_list = [input_path]
     else:
-        file_list = sorted(list(input_path.rglob('*.nii*')))
+        file_list = sorted(list(input_path.rglob("*.nii*")))
     if filter_name:
         file_list = [f for f in file_list if filter_name in f.name]
     return file_list
 
 
-def prepare_output_file_list(file_list: List[pathlib.Path],
-                             suffix: str,
-                             output_dir: Optional[pathlib.Path] = None) -> List[pathlib.Path]:
+def prepare_output_file_list(
+    file_list: list[pathlib.Path], suffix: str, output_dir: pathlib.Path | None = None
+) -> list[pathlib.Path]:
     return [
-        output_dir.joinpath(replace_suffix(f'{x.name}', suffix)) if output_dir else x.parent.joinpath(
-            replace_suffix(x.name, suffix)) for x in file_list]
+        output_dir.joinpath(replace_suffix(f"{x.name}", suffix))
+        if output_dir
+        else x.parent.joinpath(replace_suffix(x.name, suffix))
+        for x in file_list
+    ]
 
 
-def check_study_mapping_inference(study_path: pathlib.Path, config_path: str = "config.yaml") -> dict[str, dict[
-    Any, Any]] | None:
+def check_study_mapping_inference(
+    study_path: pathlib.Path, config_path: str = "config.yaml"
+) -> dict[str, dict[Any, Any]] | None:
     """
     Check study mapping inference using configuration from YAML.
     """
@@ -153,18 +167,18 @@ def check_study_mapping_inference(study_path: pathlib.Path, config_path: str = "
 
     file_list = sorted(study_path.iterdir())
 
-    if any(filter(lambda x: x.name.endswith('nii.gz') or x.name.endswith('nii'), file_list)):
-        df_file = pd.DataFrame(file_list, columns=['file_path'])
-        df_file['file_name'] = df_file['file_path'].map(lambda x: x.name.replace('.nii.gz', ''))
+    if any(filter(lambda x: x.name.endswith("nii.gz") or x.name.endswith("nii"), file_list)):
+        df_file = pd.DataFrame(file_list, columns=["file_path"])
+        df_file["file_name"] = df_file["file_path"].map(lambda x: x.name.replace(".nii.gz", ""))
         model_mapping_dict = {}
 
         for model_name, model_mapping_series_list in model_mapping_series_dict.items():
             for mapping_series in model_mapping_series_list:
-                result = np.intersect1d(df_file['file_name'], mapping_series, return_indices=True)
+                result = np.intersect1d(df_file["file_name"], mapping_series, return_indices=True)
 
                 if result[0].shape[0] >= len(mapping_series):
                     df_result = df_file.iloc()[result[1]]
-                    file_path = list(map(lambda x: str(x), df_result['file_path'].to_list()))
+                    file_path = list(map(lambda x: str(x), df_result["file_path"].to_list()))
                     model_mapping_dict.update({model_name: file_path})
                     break
 
@@ -172,8 +186,9 @@ def check_study_mapping_inference(study_path: pathlib.Path, config_path: str = "
     return None
 
 
-def generate_output_files(input_paths: List[str], task_name: str, base_output_path: str,
-                          config_path: str = "config.yaml") -> List[str]:
+def generate_output_files(
+    input_paths: list[str], task_name: str, base_output_path: str, config_path: str = "config.yaml"
+) -> list[str]:
     """
     Generate output file names based on input paths, task names, and configuration.
     """
@@ -197,27 +212,22 @@ def generate_output_files(input_paths: List[str], task_name: str, base_output_pa
 
         # Special handling for CMB task which needs to determine SWAN file
         if special == "swan_detection" and task_name == InferenceEnum.CMB and len(input_paths) >= 2:
-            base_name1 = os.path.basename(input_paths[0]).split('.')[0]
-            base_name2 = os.path.basename(input_paths[1]).split('.')[0]
+            base_name1 = os.path.basename(input_paths[0]).split(".")[0]
+            base_name2 = os.path.basename(input_paths[1]).split(".")[0]
 
-            swan_base_name = base_name1 if base_name1.startswith('SWAN') else base_name2
-            other_base_name = base_name2 if base_name1.startswith('SWAN') else base_name1
+            swan_base_name = base_name1 if base_name1.startswith("SWAN") else base_name2
+            other_base_name = base_name2 if base_name1.startswith("SWAN") else base_name1
 
             file_name = template.format(
-                swan_base_name=swan_base_name,
-                other_base_name=other_base_name,
-                task_name=task_name
+                swan_base_name=swan_base_name, other_base_name=other_base_name, task_name=task_name
             )
             output_files.append(os.path.join(base_output_path, file_name))
 
         # For formats that need to be applied to each input file
         elif apply_to == "each_input":
             for input_path in input_paths:
-                base_name = os.path.basename(input_path).split('.')[0]
-                file_name = template.format(
-                    base_name=base_name,
-                    task_name=task_name
-                )
+                base_name = os.path.basename(input_path).split(".")[0]
+                file_name = template.format(base_name=base_name, task_name=task_name)
                 output_files.append(os.path.join(base_output_path, file_name))
 
         # For formats that are applied once
@@ -228,11 +238,11 @@ def generate_output_files(input_paths: List[str], task_name: str, base_output_pa
     return output_files
 
 
-def build_Area(mode, file_dict) -> Tuple:
+def build_Area(mode, file_dict) -> tuple:
     """
     Build Area model based on input files.
     """
-    parser = argparse.ArgumentParser(prog='build_Area')
+    parser = argparse.ArgumentParser(prog="build_Area")
     args = parser.parse_known_args()[0]
     args.cmb = False
     args.wmh = False
@@ -241,47 +251,45 @@ def build_Area(mode, file_dict) -> Tuple:
     args.all = False
     args.depth_number = 5
     setattr(args, mode, True)
-    output_path = pathlib.Path(file_dict['output_path'])
-    args.intput_file_list = list(map(lambda x: pathlib.Path(x), file_dict['input_path_list']))
-    args.resample_file_list = prepare_output_file_list(args.intput_file_list, '_resample.nii.gz', output_path)
-    args.synthseg_file_list = prepare_output_file_list(args.resample_file_list, '_synthseg.nii.gz', output_path)
-    args.synthseg33_file_list = prepare_output_file_list(args.resample_file_list, '_synthseg33.nii.gz', output_path)
-    args.david_file_list = prepare_output_file_list(args.resample_file_list, '_david.nii.gz', output_path)
-    args.wm_file_list = prepare_output_file_list(args.resample_file_list, '_wm.nii.gz', output_path)
+    output_path = pathlib.Path(file_dict["output_path"])
+    args.intput_file_list = list(map(lambda x: pathlib.Path(x), file_dict["input_path_list"]))
+    args.resample_file_list = prepare_output_file_list(args.intput_file_list, "_resample.nii.gz", output_path)
+    args.synthseg_file_list = prepare_output_file_list(args.resample_file_list, "_synthseg.nii.gz", output_path)
+    args.synthseg33_file_list = prepare_output_file_list(args.resample_file_list, "_synthseg33.nii.gz", output_path)
+    args.david_file_list = prepare_output_file_list(args.resample_file_list, "_david.nii.gz", output_path)
+    args.wm_file_list = prepare_output_file_list(args.resample_file_list, "_wm.nii.gz", output_path)
     return args, args.intput_file_list
 
 
-def get_synthseg_args_file(inference_name, file_dict) -> Tuple:
+def get_synthseg_args_file(inference_name, file_dict) -> tuple:
     """
     Get synthseg args file.
     """
-    output_path = pathlib.Path(file_dict['output_path'])
+    output_path = pathlib.Path(file_dict["output_path"])
     match inference_name:
         case InferenceEnum.Area:
-            args, file_list = build_Area('wm_file', file_dict)
+            args, file_list = build_Area("wm_file", file_dict)
             return args, file_list
         case InferenceEnum.WMH_PVS:
-            args, file_list = build_Area('wmh', file_dict)
-            args.wmh_file_list = prepare_output_file_list(args.resample_file_list, '_WMHPVS.nii.gz', output_path)
+            args, file_list = build_Area("wmh", file_dict)
+            args.wmh_file_list = prepare_output_file_list(args.resample_file_list, "_WMHPVS.nii.gz", output_path)
             return args, file_list
         case InferenceEnum.DWI:
-            args, file_list = build_Area('dwi', file_dict)
-            args.dwi_file_list = prepare_output_file_list(args.resample_file_list, '_DWI.nii.gz', output_path)
+            args, file_list = build_Area("dwi", file_dict)
+            args.dwi_file_list = prepare_output_file_list(args.resample_file_list, "_DWI.nii.gz", output_path)
             return args, file_list
         case InferenceEnum.CMB:
-            args, file_list = build_Area('cmb', file_dict)
-            args.cmb_file_list = prepare_output_file_list(args.resample_file_list, '_CMB.nii.gz', output_path)
+            args, file_list = build_Area("cmb", file_dict)
+            args.cmb_file_list = prepare_output_file_list(args.resample_file_list, "_CMB.nii.gz", output_path)
             return args, file_list
         case InferenceEnum.Aneurysm:
-            args, file_list = build_Area('wm_file', file_dict)
+            args, file_list = build_Area("wm_file", file_dict)
             return args, file_list
         case _:
             return (None, None)
 
 
-
-def build_input_post_process(input_paths, model_name,
-                             config_path: str = "config.yaml") -> List[Union[pathlib.Path, str]]:
+def build_input_post_process(input_paths, model_name, config_path: str = "config.yaml") -> list[pathlib.Path | str]:
     """
     Build input post process using configuration.
     """
@@ -291,7 +299,7 @@ def build_input_post_process(input_paths, model_name,
     if not post_process_config:
         return input_paths
 
-    input_name_list = list(map(lambda x: replace_suffix(os.path.basename(x), ''), input_paths))
+    input_name_list = list(map(lambda x: replace_suffix(os.path.basename(x), ""), input_paths))
 
     # 獲取匹配條件
     condition = post_process_config.get("condition", {})
@@ -341,13 +349,12 @@ def build_analysis(study_path: pathlib.Path, config_path: str = "config.yaml"):
         for model_name, input_paths in task_dict.items():
             input_paths = build_input_post_process(input_paths, model_name, config_path)
 
-            task_output_files = generate_output_files(input_paths,
-                                                      model_name,
-                                                      str(study_path),
-                                                      config_path)
-            task = Task(intput_path_list=input_paths,
-                        output_path=str(study_path),
-                        output_path_list=task_output_files, )
+            task_output_files = generate_output_files(input_paths, model_name, str(study_path), config_path)
+            task = Task(
+                intput_path_list=input_paths,
+                output_path=str(study_path),
+                output_path_list=task_output_files,
+            )
             tasks_dump = {model_name: task.model_dump()}
             tasks[model_name] = task
 
@@ -355,12 +362,15 @@ def build_analysis(study_path: pathlib.Path, config_path: str = "config.yaml"):
     return analyses
 
 
-def build_inference_cmd(nifti_study_path: pathlib.Path,
-                        dicom_study_path: pathlib.Path, ) -> Optional[InferenceCmd]:
+def build_inference_cmd(
+    nifti_study_path: pathlib.Path,
+    dicom_study_path: pathlib.Path,
+) -> InferenceCmd | None:
     """
     Build inference command.
     """
     from code_ai.pipeline import pipelines
+
     analysis: Analysis = build_analysis(nifti_study_path)
     inference_item_list = []
 
@@ -369,9 +379,9 @@ def build_inference_cmd(nifti_study_path: pathlib.Path,
             if key in pipelines:
                 task = getattr(analysis, key)
                 if key == InferenceEnum.Infarct:
-                    basename = os.path.basename(task.input_path_list[1]).split('.')[0]
+                    basename = os.path.basename(task.input_path_list[1]).split(".")[0]
                 else:
-                    basename = os.path.basename(task.input_path_list[0]).split('.')[0]
+                    basename = os.path.basename(task.input_path_list[0]).split(".")[0]
 
                 if dicom_study_path.name == nifti_study_path.name:
                     intput_dicom = dicom_study_path.joinpath(basename)
@@ -380,13 +390,14 @@ def build_inference_cmd(nifti_study_path: pathlib.Path,
 
                 input_dicom_dir = str(intput_dicom)
                 cmd_str = pipelines[key].generate_cmd(analysis.study_id, task, input_dicom_dir)
-                inference_item = InferenceCmdItem(study_id=analysis.study_id,
-                                                  name=key,
-                                                  cmd_str=cmd_str,
-                                                  input_list=task.input_path_list,
-                                                  output_list=task.output_path_list,
-                                                  input_dicom_dir=str(intput_dicom)
-                                                  )
+                inference_item = InferenceCmdItem(
+                    study_id=analysis.study_id,
+                    name=key,
+                    cmd_str=cmd_str,
+                    input_list=task.input_path_list,
+                    output_list=task.output_path_list,
+                    input_dicom_dir=str(intput_dicom),
+                )
                 inference_item_list.append(inference_item)
 
     return InferenceCmd(cmd_items=inference_item_list)

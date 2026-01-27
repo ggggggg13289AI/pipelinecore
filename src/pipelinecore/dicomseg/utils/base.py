@@ -1,6 +1,7 @@
 """
 @author: sean
 """
+
 import os
 import pathlib
 from typing import Any
@@ -14,9 +15,11 @@ import SimpleITK as sitk
 from pydicom import FileDataset
 from pydicom.dicomdir import DicomDir
 
-EXAMPLE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                            'SEG_20230210_160056_635_S3.dcm')
+EXAMPLE_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SEG_20230210_160056_635_S3.dcm"
+)
 DCM_EXAMPLE = pydicom.dcmread(EXAMPLE_FILE)
+
 
 def compute_orientation(init_axcodes, final_axcodes):
     """
@@ -60,16 +63,17 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     return nib.orientations.apply_orientation(data_array, ornt_transf)
 
 
-def get_array_to_dcm_axcodes(path_nii :pathlib.Path | str) -> np.ndarray:
+def get_array_to_dcm_axcodes(path_nii: pathlib.Path | str) -> np.ndarray:
     pred_nii = nib.load(path_nii)
     pred_data = np.array(pred_nii.dataobj)
     # Reorient prediction data to standard orientation
     pred_nii_obj_axcodes = tuple(nib.aff2axcodes(pred_nii.affine))
-    return do_reorientation(pred_data, pred_nii_obj_axcodes,
-                                       # ('I', 'P', 'L')
-                                       ('S', 'P', 'L')
-                                       )
-
+    return do_reorientation(
+        pred_data,
+        pred_nii_obj_axcodes,
+        # ('I', 'P', 'L')
+        ("S", "P", "L"),
+    )
 
 
 def get_dicom_seg_template(model: str, label_dict: dict) -> dict:
@@ -131,11 +135,13 @@ def get_dicom_seg_template(model: str, label_dict: dict) -> dict:
     return template
 
 
-def make_dicomseg_file(mask: np.ndarray,
-                       image: sitk.Image,
-                       first_dcm: pydicom.FileDataset,
-                       source_images: list[pydicom.FileDataset],
-                       template_json: dict) -> pydicom.FileDataset:
+def make_dicomseg_file(
+    mask: np.ndarray,
+    image: sitk.Image,
+    first_dcm: pydicom.FileDataset,
+    source_images: list[pydicom.FileDataset],
+    template_json: dict,
+) -> pydicom.FileDataset:
     """
     Create a DICOM-SEG file from a mask array.
 
@@ -184,14 +190,15 @@ def make_dicomseg_file(mask: np.ndarray,
     return dcm_seg
 
 
-def create_dicom_seg_file(pred_data_unique: np.ndarray,
-                          pred_data: np.ndarray,
-                          series_name: str,
-                          output_folder: pathlib.Path,
-                          image: Any,
-                          first_dcm: FileDataset | DicomDir,
-                          source_images: list[FileDataset | DicomDir],
-                          ) -> list[dict[str, Any]]:
+def create_dicom_seg_file(
+    pred_data_unique: np.ndarray,
+    pred_data: np.ndarray,
+    series_name: str,
+    output_folder: pathlib.Path,
+    image: Any,
+    first_dcm: FileDataset | DicomDir,
+    source_images: list[FileDataset | DicomDir],
+) -> list[dict[str, Any]]:
     """
     Create DICOM-SEG files for each unique value in the prediction data.
 
@@ -219,25 +226,19 @@ def create_dicom_seg_file(pred_data_unique: np.ndarray,
         # Only create DICOM-SEG if the mask contains positive values
         if np.sum(mask) > 0:
             # Create label dictionary for this mask
-            label_dict = {1: {'SegmentLabel': f'A{i}', 'color': 'red'}}
+            label_dict = {1: {"SegmentLabel": f"A{i}", "color": "red"}}
 
             # Create template for DICOM-SEG
             template_json = get_dicom_seg_template(series_name, label_dict)
 
             # Generate DICOM-SEG file
-            dcm_seg = make_dicomseg_file(
-                mask.astype('uint8'),
-                image,
-                first_dcm,
-                source_images,
-                template_json
-            )
+            dcm_seg = make_dicomseg_file(mask.astype("uint8"), image, first_dcm, source_images, template_json)
 
             # Find the median slice containing the mask (main slice)
             main_seg_slice = int(np.median(np.where(mask)[0]))
 
             # Save DICOM-SEG file
-            dcm_seg_filename = f'{series_name}_{label_dict[1]["SegmentLabel"]}.dcm'
+            dcm_seg_filename = f"{series_name}_{label_dict[1]['SegmentLabel']}.dcm"
 
             dcm_seg_path = output_folder.joinpath(dcm_seg_filename)
             if dcm_seg_path.exists():
@@ -246,22 +247,19 @@ def create_dicom_seg_file(pred_data_unique: np.ndarray,
             dcm_seg.save_as(dcm_seg_path)
 
             # Clear console line and show progress
-            print(" " * 100, end='\r')
-            print(f"{index + 1}/{pred_data_unique_len} Saved: {dcm_seg_path}", end='\r')
+            print(" " * 100, end="\r")
+            print(f"{index + 1}/{pred_data_unique_len} Saved: {dcm_seg_path}", end="\r")
 
             # Add result to the list if file was created successfully
             if dcm_seg_path.exists():
-                reslut_list.append({
-                    'mask_index': i,
-                    'dcm_seg_path': dcm_seg_path,
-                    'main_seg_slice': main_seg_slice
-                })
+                reslut_list.append({"mask_index": i, "dcm_seg_path": dcm_seg_path, "main_seg_slice": main_seg_slice})
 
     return reslut_list
 
 
-def load_and_sort_dicom_files(path_dcms: pathlib.Path | str) -> tuple[
-    list[Any], Any, FileDataset | DicomDir, list[FileDataset | DicomDir]]:
+def load_and_sort_dicom_files(
+    path_dcms: pathlib.Path | str,
+) -> tuple[list[Any], Any, FileDataset | DicomDir, list[FileDataset | DicomDir]]:
     """
     Load and sort DICOM files from a directory.
     This function only needs to be executed once per directory.
@@ -285,7 +283,7 @@ def load_and_sort_dicom_files(path_dcms: pathlib.Path | str) -> tuple[
 
     # Sort slices by position
     slice_dcm = []
-    for (slice_data, dcm_slice) in zip(slices, dcms):
+    for slice_data, dcm_slice in zip(slices, dcms):
         # Get Image Orientation Patient (IOP)
         IOP = np.array(slice_data.get((0x0020, 0x0037)).value)
         # Get Image Position Patient (IPP)
@@ -297,8 +295,8 @@ def load_and_sort_dicom_files(path_dcms: pathlib.Path | str) -> tuple[
         slice_dcm.append({"d": projection, "dcm": dcm_slice})
 
     # Sort slices by projection value
-    slice_dcms = sorted(slice_dcm, key=lambda i: i['d'])
-    sorted_dcms = [y['dcm'] for y in slice_dcms]
+    slice_dcms = sorted(slice_dcm, key=lambda i: i["d"])
+    sorted_dcms = [y["dcm"] for y in slice_dcms]
 
     # Read the image data
     reader.SetFileNames(sorted_dcms)
@@ -332,4 +330,3 @@ def transform_mask_for_dicom_seg(mask: np.ndarray) -> np.ndarray:
     # Flip y and x axes to match DICOM coordinate system
     segmentation_data = np.flip(segmentation_data, 1)
     return np.flip(segmentation_data, 2)
-
