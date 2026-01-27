@@ -1,5 +1,6 @@
 import os
 import pathlib
+from typing import Any
 
 import nibabel as nib
 import nibabel.processing
@@ -255,18 +256,32 @@ def resample_to_1mm(input_path: pathlib.Path | str, output_path: pathlib.Path | 
 
 
 def compute_z_index_mapping(
-    raw_path: pathlib.Path | str,
-    resample_path: pathlib.Path | str,
+    raw_path: pathlib.Path | str | None = None,
+    resample_path: pathlib.Path | str | None = None,
+    logger: Any = None,
+    *,
+    original_file: pathlib.Path | str | None = None,
+    resample_file: pathlib.Path | str | None = None,
 ) -> tuple[np.ndarray, nib.Nifti1Image, nib.Nifti1Image]:
     """Compute Z-index mapping from resampled to original volume.
 
     Args:
-        raw_path: Original (unresampled) NIfTI file
-        resample_path: Resampled NIfTI file
+        raw_path: Original (unresampled) NIfTI file (alias: original_file)
+        resample_path: Resampled NIfTI file (alias: resample_file)
+        logger: Optional logger (ignored, for API compatibility)
+        original_file: Alias for raw_path
+        resample_file: Alias for resample_path
 
     Returns:
         Tuple of (argmin z-indices, original nifti, resampled nifti)
     """
+    # Handle parameter aliases
+    raw_path = raw_path or original_file
+    resample_path = resample_path or resample_file
+
+    if raw_path is None or resample_path is None:
+        raise ValueError("raw_path and resample_path are required")
+
     raw_path = pathlib.Path(raw_path)
     resample_path = pathlib.Path(resample_path)
 
@@ -289,22 +304,34 @@ def compute_z_index_mapping(
 
 
 def restore_original_size(
-    raw_path: pathlib.Path | str,
-    resample_seg_path: pathlib.Path | str,
-    argmin: np.ndarray,
+    raw_path: pathlib.Path | str | None = None,
+    resample_seg_path: pathlib.Path | str | None = None,
+    argmin: np.ndarray | None = None,
     output_path: pathlib.Path | str | None = None,
+    *,
+    original_file: pathlib.Path | str | None = None,
+    seg_file: pathlib.Path | str | None = None,
 ) -> pathlib.Path:
     """Restore resampled segmentation to original volume size.
 
     Args:
-        raw_path: Original (unresampled) NIfTI file (for dimensions)
-        resample_seg_path: Resampled segmentation file
+        raw_path: Original (unresampled) NIfTI file (alias: original_file)
+        resample_seg_path: Resampled segmentation file (alias: seg_file)
         argmin: Z-index mapping from compute_z_index_mapping
         output_path: Optional output path (defaults to original_<filename>)
+        original_file: Alias for raw_path
+        seg_file: Alias for resample_seg_path
 
     Returns:
         Path to restored segmentation file
     """
+    # Handle parameter aliases
+    raw_path = raw_path or original_file
+    resample_seg_path = resample_seg_path or seg_file
+
+    if raw_path is None or resample_seg_path is None or argmin is None:
+        raise ValueError("raw_path, resample_seg_path, and argmin are required")
+
     raw_path = pathlib.Path(raw_path)
     resample_seg_path = pathlib.Path(resample_seg_path)
 
@@ -335,22 +362,36 @@ def restore_original_size(
 
 
 def restore_original_size_batch(
-    raw_path: pathlib.Path | str,
-    resample_paths: list[pathlib.Path | str],
-    argmin: np.ndarray,
+    raw_path: pathlib.Path | str | None = None,
+    resample_paths: list[pathlib.Path | str] | None = None,
+    argmin: np.ndarray | None = None,
     output_dir: pathlib.Path | str | None = None,
+    logger: Any = None,
+    *,
+    original_file: pathlib.Path | str | None = None,
+    seg_files: list[pathlib.Path | str] | None = None,
 ) -> list[pathlib.Path]:
     """Restore multiple resampled files to original volume size.
 
     Args:
-        raw_path: Original (unresampled) NIfTI file (for dimensions)
-        resample_paths: List of resampled files to restore
+        raw_path: Original (unresampled) NIfTI file (alias: original_file)
+        resample_paths: List of resampled files to restore (alias: seg_files)
         argmin: Z-index mapping from compute_z_index_mapping
         output_dir: Optional output directory (defaults to same as input)
+        logger: Optional logger (ignored, for API compatibility)
+        original_file: Alias for raw_path
+        seg_files: Alias for resample_paths
 
     Returns:
         List of paths to restored files
     """
+    # Handle parameter aliases
+    raw_path = raw_path or original_file
+    resample_paths = resample_paths or seg_files
+
+    if raw_path is None or resample_paths is None or argmin is None:
+        raise ValueError("raw_path, resample_paths, and argmin are required")
+
     raw_path = pathlib.Path(raw_path)
     output_paths = []
 
