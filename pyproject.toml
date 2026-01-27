@@ -35,6 +35,7 @@ dependencies = [
     "pydicom==2.4.3",
     "pyorthanc>=1.22.1",
     "pydantic<2.11",
+    "nibabel>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -150,6 +151,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "tensorflow.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "nibabel.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

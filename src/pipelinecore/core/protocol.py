@@ -44,3 +44,35 @@ class LoggerLike(Protocol):
     def exception(self, msg: str, *args, **kwargs) -> None:
         """Log exception with traceback."""
         ...
+
+
+class NullLogger:
+    """A logger that does nothing.
+
+    Useful as a default when no logging is needed.
+    Implements LoggerLike protocol.
+    """
+
+    def info(self, msg: str, *args, **kwargs) -> None:
+        """No-op info."""
+        pass
+
+    def warning(self, msg: str, *args, **kwargs) -> None:
+        """No-op warning."""
+        pass
+
+    def error(self, msg: str, *args, **kwargs) -> None:
+        """No-op error."""
+        pass
+
+    def debug(self, msg: str, *args, **kwargs) -> None:
+        """No-op debug."""
+        pass
+
+    def exception(self, msg: str, *args, **kwargs) -> None:
+        """No-op exception."""
+        pass
+
+
+# Singleton null logger instance
+null_logger = NullLogger()

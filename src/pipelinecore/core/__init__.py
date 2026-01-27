@@ -12,7 +12,7 @@ from .base import (
     PipelineError,
     PipelinePaths,
 )
-from .protocol import LoggerLike
+from .protocol import LoggerLike, NullLogger, null_logger
 from .timing import (
     TimedLogger,
     TimingCollector,
@@ -34,6 +34,8 @@ __all__ = [
     "TensorflowPipelineMixin",
     # Protocols
     "LoggerLike",
+    "NullLogger",
+    "null_logger",
     # Timing
     "TimedLogger",
     "TimingCollector",

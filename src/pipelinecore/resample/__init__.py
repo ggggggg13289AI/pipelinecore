@@ -231,3 +231,138 @@ def get_volume_info(file_path_str: str):
     header_img = img_nii.header.copy()  # 抓出nii header 去算體積
     pixdim_img = header_img["pixdim"]  # 可以借此從nii的header抓出voxel size
     return img_nii, img_array, y_i, x_i, z_i, header_img, pixdim_img
+
+
+# =============================================================================
+# New API Functions (aliases and wrappers for cleaner interface)
+# =============================================================================
+
+
+def resample_to_1mm(input_path: pathlib.Path | str, output_path: pathlib.Path | str) -> pathlib.Path:
+    """Resample volume to 1mm isotropic resolution.
+
+    Args:
+        input_path: Input NIfTI file path
+        output_path: Output NIfTI file path
+
+    Returns:
+        Path to resampled file
+    """
+    input_path = pathlib.Path(input_path)
+    output_path = pathlib.Path(output_path)
+    resample_one(str(input_path), str(output_path))
+    return output_path
+
+
+def compute_z_index_mapping(
+    raw_path: pathlib.Path | str,
+    resample_path: pathlib.Path | str,
+) -> tuple[np.ndarray, nib.Nifti1Image, nib.Nifti1Image]:
+    """Compute Z-index mapping from resampled to original volume.
+
+    Args:
+        raw_path: Original (unresampled) NIfTI file
+        resample_path: Resampled NIfTI file
+
+    Returns:
+        Tuple of (argmin z-indices, original nifti, resampled nifti)
+    """
+    raw_path = pathlib.Path(raw_path)
+    resample_path = pathlib.Path(resample_path)
+
+    img_nii, img_array, y_i, x_i, z_i, header_img, pixdim_img = get_volume_info(str(raw_path))
+    img_1mm_nii, img_1mm_array, y_i1, x_i1, z_i1, header_img_1mm, pixdim_img_1mm = get_volume_info(
+        str(resample_path)
+    )
+
+    # Conform resampled to original xy dimensions
+    img_1mm_ori_nii = nibabel.processing.conform(
+        img_1mm_nii, ((y_i, x_i, z_i1)), (pixdim_img[1], pixdim_img[2], pixdim_img_1mm[3]), order=1
+    )
+    img_1mm_ori = np.array(img_1mm_ori_nii.dataobj)
+
+    # Compute z-index mapping
+    z_pixdim_img = max(int(header_img["pixdim"][3]), 1)
+    argmin = get_original_z_index(img_array, z_i, img_1mm_ori, z_i1, z_pixdim_img)
+
+    return argmin, img_nii, img_1mm_nii
+
+
+def restore_original_size(
+    raw_path: pathlib.Path | str,
+    resample_seg_path: pathlib.Path | str,
+    argmin: np.ndarray,
+    output_path: pathlib.Path | str | None = None,
+) -> pathlib.Path:
+    """Restore resampled segmentation to original volume size.
+
+    Args:
+        raw_path: Original (unresampled) NIfTI file (for dimensions)
+        resample_seg_path: Resampled segmentation file
+        argmin: Z-index mapping from compute_z_index_mapping
+        output_path: Optional output path (defaults to original_<filename>)
+
+    Returns:
+        Path to restored segmentation file
+    """
+    raw_path = pathlib.Path(raw_path)
+    resample_seg_path = pathlib.Path(resample_seg_path)
+
+    img_nii, img_array, y_i, x_i, z_i, header_img, pixdim_img = get_volume_info(str(raw_path))
+    img_1mm_nii, _, _, _, z_i1, _, pixdim_img_1mm = get_volume_info(str(resample_seg_path))
+
+    # Conform to original xy dimensions
+    seg_1mm_nii = nib.load(str(resample_seg_path))
+    seg_1mm_ori_nii = nibabel.processing.conform(
+        seg_1mm_nii, ((y_i, x_i, z_i1)), (pixdim_img[1], pixdim_img[2], pixdim_img_1mm[3]), order=0
+    )
+    seg_1mm_ori = np.array(seg_1mm_ori_nii.dataobj)
+    seg_1mm_ori = data_translate(seg_1mm_ori, seg_1mm_ori_nii)
+
+    # Apply z-index mapping
+    new_array = seg_1mm_ori[:, :, argmin]
+    new_array_save = data_translate_back(new_array, img_nii)
+    new_seg_nii = nii_img_replace(img_nii, new_array_save)
+
+    # Determine output path
+    if output_path is None:
+        output_path = resample_seg_path.parent / f"original_{resample_seg_path.name}"
+    else:
+        output_path = pathlib.Path(output_path)
+
+    nib.save(new_seg_nii, str(output_path))
+    return output_path
+
+
+def restore_original_size_batch(
+    raw_path: pathlib.Path | str,
+    resample_paths: list[pathlib.Path | str],
+    argmin: np.ndarray,
+    output_dir: pathlib.Path | str | None = None,
+) -> list[pathlib.Path]:
+    """Restore multiple resampled files to original volume size.
+
+    Args:
+        raw_path: Original (unresampled) NIfTI file (for dimensions)
+        resample_paths: List of resampled files to restore
+        argmin: Z-index mapping from compute_z_index_mapping
+        output_dir: Optional output directory (defaults to same as input)
+
+    Returns:
+        List of paths to restored files
+    """
+    raw_path = pathlib.Path(raw_path)
+    output_paths = []
+
+    for resample_path in resample_paths:
+        resample_path = pathlib.Path(resample_path)
+
+        if output_dir:
+            out_path = pathlib.Path(output_dir) / f"original_{resample_path.name}"
+        else:
+            out_path = resample_path.parent / f"original_{resample_path.name}"
+
+        restored_path = restore_original_size(raw_path, resample_path, argmin, out_path)
+        output_paths.append(restored_path)
+
+    return output_paths
