@@ -17,6 +17,8 @@ def save_nifti(
     affine: np.ndarray,
     header: Any,
     output_path: Path | str,
+    align_to_affine: bool = False,
+    dtype: np.dtype | None = None,
 ) -> Path:
     """Save numpy array as NIfTI file.
 
@@ -25,11 +27,24 @@ def save_nifti(
         affine: Affine transformation matrix
         header: NIfTI header (or None for default)
         output_path: Output file path
+        align_to_affine: Whether to align data to affine orientation before saving
+        dtype: Optional dtype to cast data to before saving
 
     Returns:
         Path to saved file
     """
+    from .alignment import align_volume_to_ref
+
     output_path = Path(output_path)
+
+    # Apply dtype conversion if specified
+    if dtype is not None:
+        data = data.astype(dtype)
+
+    # Align to affine if requested
+    if align_to_affine:
+        data = align_volume_to_ref(data, affine, aff_ref=np.eye(4), n_dims=3, return_copy=True)
+
     nifti = nib.Nifti1Image(data, affine, header)
     nib.save(nifti, str(output_path))
     return output_path
