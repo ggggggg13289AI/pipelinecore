@@ -194,16 +194,6 @@ class GpuResourceManager:
             logger.warning("Unable to set memory growth for %s: %s", device.name, exc)
 
 
-class TensorflowPipelineMixin:
-    """Mixin that ensures GPU availability before running TensorFlow inference."""
-
-    def __init__(self, gpu_manager: GpuResourceManager) -> None:
-        self._gpu_manager = gpu_manager
-
-    def before_run(self) -> None:  # pragma: no cover - thin coordination layer
-        self._gpu_manager.ensure_available()
-
-
 class FileStager:
     """Utility responsible for staging and copying files into working directories."""
 
