@@ -14,8 +14,10 @@ from pipelinecore.core import (
     PipelineContext,
     PipelineError,
     PipelinePaths,
-    TensorflowPipelineMixin,
     __version__,
+    TimedLogger,
+    TimingCollector,
+    timed_execution
 )
 
 __all__ = [
@@ -27,6 +29,8 @@ __all__ = [
     "PipelineContext",
     "PipelinePaths",
     "PipelineError",
-    "TensorflowPipelineMixin",
     "__version__",
+    "TimedLogger",
+    "TimingCollector",
+    "timed_execution"
 ]

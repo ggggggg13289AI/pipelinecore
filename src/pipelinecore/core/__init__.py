@@ -11,7 +11,6 @@ from .base import (
     PipelineContext,
     PipelineError,
     PipelinePaths,
-    TensorflowPipelineMixin,
 )
 from .protocol import LoggerLike
 from .timing import (
