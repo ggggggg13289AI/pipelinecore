@@ -29,12 +29,14 @@ class TimingResult:
         elapsed_seconds: Execution time in seconds
         success: Whether the step completed without exception
         message: Optional message (error details on failure, notes on success)
+        level: Hierarchy level for indentation (0 = top-level, 1 = sub-step, etc.)
     """
 
     step_name: str
     elapsed_seconds: float
     success: bool
     message: str = ""
+    level: int = 0
 
     @property
     def elapsed_minutes(self) -> float:
@@ -60,6 +62,7 @@ def timed_execution(
     step_name: str,
     *args: Any,
     logger: LoggerLike | logging.Logger | None = None,
+    level: int = 0,
     **kwargs: Any,
 ) -> tuple[T | None, TimingResult]:
     """
@@ -70,6 +73,7 @@ def timed_execution(
         step_name: Name for this step (used in TimingResult and logging)
         *args: Positional arguments passed to func
         logger: Optional logger for progress messages (LoggerLike or logging.Logger)
+        level: Hierarchy level for indentation (0 = top-level, 1 = sub-step, etc.)
         **kwargs: Keyword arguments passed to func
 
     Returns:
@@ -80,13 +84,15 @@ def timed_execution(
         result, timing = timed_execution(
             model.predict, "inference",
             input_data,
-            logger=self.context.logger
+            logger=self.context.logger,
+            level=1
         )
         if timing.success:
             print(f"Completed in {timing.elapsed_formatted}")
     """
+    indent = "  " * level
     if logger:
-        logger.info(f"[開始] {step_name}")
+        logger.info(f"{indent}[開始] {step_name}")
 
     start_time = time.perf_counter()
 
@@ -98,9 +104,10 @@ def timed_execution(
             elapsed_seconds=elapsed,
             success=True,
             message=f"{step_name} 完成",
+            level=level,
         )
         if logger:
-            logger.info(f"[完成] {step_name} | 耗時: {elapsed:.2f} 秒")
+            logger.info(f"{indent}[完成] {step_name} | 耗時: {elapsed:.2f} 秒")
         return result, timing
 
     except Exception as e:
@@ -110,9 +117,10 @@ def timed_execution(
             elapsed_seconds=elapsed,
             success=False,
             message=f"{step_name} 失敗: {str(e)}",
+            level=level,
         )
         if logger:
-            logger.error(f"[失敗] {step_name} | 耗時: {elapsed:.2f} 秒 | 錯誤: {str(e)}")
+            logger.error(f"{indent}[失敗] {step_name} | 耗時: {elapsed:.2f} 秒 | 錯誤: {str(e)}")
         return None, timing
 
 
@@ -165,11 +173,12 @@ class TimingCollector:
         return [r for r in self.results if r.success]
 
     def summary(self) -> str:
-        """Generate summary report."""
+        """Generate summary report with hierarchical indentation."""
         lines = ["Pipeline Timing Summary", "=" * 50]
         for r in self.results:
             status = "OK" if r.success else "FAIL"
-            lines.append(f"  [{status}] {r.step_name}: {r.elapsed_formatted}")
+            indent = "  " * (r.level + 1)  # +1 for base indentation
+            lines.append(f"{indent}[{status}] {r.step_name}: {r.elapsed_formatted}")
         lines.append("-" * 50)
 
         total_formatted = f"{self.total_minutes:.2f}m" if self.total_seconds >= 60 else f"{self.total_seconds:.2f}s"
