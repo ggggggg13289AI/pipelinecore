@@ -239,7 +239,7 @@ class BasePipeline(Generic[InputT, PreparedT, InferenceT, OutputT]):
         """Execute the pipeline with optional timing collection.
 
         If context.timing_collector is set, timing results are collected
-        for prepare, run_inference, and postprocess steps.
+        for prepare, run_inference, and postprocess steps with hierarchical levels.
         """
         self.context.paths.ensure()
         self.before_run()
