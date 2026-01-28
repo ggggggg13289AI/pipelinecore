@@ -148,13 +148,31 @@ class TimingCollector:
         self.results.clear()
 
     @property
+    def min_level(self) -> int:
+        """Minimum (top-most) level in collected results."""
+        if not self.results:
+            return 0
+        return min(r.level for r in self.results)
+
+    def total_seconds_at_level(self, level: int) -> float:
+        """Total elapsed time for steps at specified level only.
+
+        Use this to avoid double-counting nested timing.
+        """
+        return sum(r.elapsed_seconds for r in self.results if r.level == level)
+
+    @property
     def total_seconds(self) -> float:
-        """Total elapsed time across all steps."""
-        return sum(r.elapsed_seconds for r in self.results)
+        """Total elapsed time for top-level steps only.
+
+        Only counts steps at the minimum level to avoid double-counting
+        nested/hierarchical timing.
+        """
+        return self.total_seconds_at_level(self.min_level)
 
     @property
     def total_minutes(self) -> float:
-        """Total elapsed time in minutes."""
+        """Total elapsed time in minutes (top-level only)."""
         return self.total_seconds / 60
 
     @property
