@@ -183,11 +183,43 @@ def make_dicomseg_file(
     dcm_seg[0x20, 0x0011].value = first_dcm[0x20, 0x0011].value  # Series Number
 
     # Copy more metadata from the example DICOM-SEG file
+    # NOTE: This section ensures DICOM-SEG always has valid spatial metadata.
+    # If source DICOM lacks optional tags, we compute from SimpleITK image.
     dcm_seg[0x5200, 0x9229].value = DCM_EXAMPLE[0x5200, 0x9229].value
-    dcm_seg[0x5200, 0x9229][0][0x20, 0x9116][0][0x20, 0x0037].value = first_dcm[0x20, 0x0037].value
-    dcm_seg[0x5200, 0x9229][0][0x28, 0x9110][0][0x18, 0x0050].value = first_dcm[0x18, 0x0050].value
-    dcm_seg[0x5200, 0x9229][0][0x28, 0x9110][0][0x18, 0x0088].value = first_dcm[0x18, 0x0088].value
-    dcm_seg[0x5200, 0x9229][0][0x28, 0x9110][0][0x28, 0x0030].value = first_dcm[0x28, 0x0030].value
+    shared_fg = dcm_seg[0x5200, 0x9229][0]
+
+    # Fallback: compute spacing from SimpleITK image when DICOM tags missing
+    spacing = image.GetSpacing()  # (x, y, z) in mm
+
+    # Image Orientation (Patient) - 6 direction cosines
+    if (0x20, 0x0037) in first_dcm:
+        shared_fg[0x20, 0x9116][0][0x20, 0x0037].value = first_dcm[0x20, 0x0037].value
+    else:
+        # Compute from image direction matrix (first 6 of 9 values: row and column cosines)
+        direction = image.GetDirection()
+        orientation = [direction[0], direction[3], direction[6], direction[1], direction[4], direction[7]]
+        shared_fg[0x20, 0x9116][0][0x20, 0x0037].value = orientation
+
+    # Pixel Measures Sequence tags (optional in source DICOM)
+    pixel_measures = shared_fg[0x28, 0x9110][0]
+
+    # Slice Thickness
+    if (0x18, 0x0050) in first_dcm:
+        pixel_measures[0x18, 0x0050].value = first_dcm[0x18, 0x0050].value
+    else:
+        pixel_measures[0x18, 0x0050].value = f"{spacing[2]:.6f}"
+
+    # Spacing Between Slices (optional - not all DICOM files have this)
+    if (0x18, 0x0088) in first_dcm:
+        pixel_measures[0x18, 0x0088].value = first_dcm[0x18, 0x0088].value
+    else:
+        pixel_measures[0x18, 0x0088].value = f"{spacing[2]:.6f}"
+
+    # Pixel Spacing [row spacing, column spacing]
+    if (0x28, 0x0030) in first_dcm:
+        pixel_measures[0x28, 0x0030].value = first_dcm[0x28, 0x0030].value
+    else:
+        pixel_measures[0x28, 0x0030].value = [f"{spacing[1]:.6f}", f"{spacing[0]:.6f}"]
 
     return dcm_seg
 
