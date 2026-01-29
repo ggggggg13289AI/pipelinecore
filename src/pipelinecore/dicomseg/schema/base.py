@@ -4,7 +4,7 @@ import os
 import numpy as np
 from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 
-from .schema.enum import ModelTypeEnum, SeriesTypeEnum
+from .enum import ModelTypeEnum, SeriesTypeEnum
 
 # // 目前 Orthanc 自動同步機制的 group 應為 44
 GROUP_ID = os.getenv("GROUP_ID", 44)
