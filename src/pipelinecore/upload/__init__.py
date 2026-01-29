@@ -15,7 +15,7 @@ def upload_dicom_seg(input_dicom_seg_folder: str, input_nifti: str) -> tuple[str
     dicom_seg_base_name = input_nifti_path.name.split(".")[0]
     file_list = sorted(input_dicom_seg_folder_path.rglob(dicom_seg_base_name + "*.dcm"))
     file_str_list = list(map(lambda x: str(x), file_list))
-    cmd_str = "export PYTHONPATH={} && {} code_ai/pipeline/upload/orthanc_dicom.py --Input {} ".format(
+    cmd_str = "export PYTHONPATH={} && {} code_ai/pipeline/platform/orthanc_dicom.py --Input {} ".format(
         pathlib.Path(__file__).parent.parent.parent.absolute(), PYTHON3, " ".join(file_str_list)
     )
     print("upload_dicom_seg", cmd_str)
@@ -47,7 +47,7 @@ def upload_json(ID: str, mode: InferenceEnum) -> object:
             for platform_json in platform_json_list:
                 cmd_str = (
                     f"export PYTHONPATH={pathlib.Path(__file__).parent.parent.parent.parent.absolute()} && "
-                    f"{PYTHON3} code_ai/pipeline/upload/platform_json.py "
+                    f"{PYTHON3} code_ai/pipeline/platform/platform_json.py "
                     f"--Input {platform_json} "
                 )
                 print("upload_json", cmd_str)
